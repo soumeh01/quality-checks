@@ -1,0 +1,60 @@
+name: 'Contribution Rules'
+description: 'Check Repository Contribution Rules'
+author: 'Sourabh Mehta <sourabh.mehta@arm.com>'
+
+inputs:
+  repository:
+    description: 'Full repository name (e.g., org/repo)'
+    required: true
+  branch:
+    description: 'Branch to check (e.g., main)'
+    required: true
+  token:
+    description: 'GitHub token'
+    required: true
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Set up GH CLI authentication
+      shell: bash
+      run: |
+        echo "${{ inputs.token }}" | gh auth login --with-token
+
+    - name: Check Branch Protection
+      shell: bash
+      env:
+        REPO: ${{ inputs.repository }}
+        BRANCH: ${{ inputs.branch }}
+      run: |
+        echo "🔍 Checking branch protection settings for '$BRANCH' in '$REPO'..."
+
+        # Fetch protection rules using gh api
+        response=$(gh api \
+          -H "Accept: application/vnd.github+json" \
+          /repos/$REPO/branches/$BRANCH/protection)
+
+        echo "$response" | jq .
+
+        # Validate protection rules
+        if [ "$(echo "$response" | jq -r '.required_pull_request_reviews')" = "null" ]; then
+          echo "❌ Pull request approvals NOT required."
+          exit 1
+        fi
+
+        if [ "$(echo "$response" | jq -r '.required_status_checks')" = "null" ]; then
+          echo "❌ Status checks NOT required."
+          exit 1
+        fi
+
+        if [ "$(echo "$response" | jq -r '.required_status_checks.strict')" != "true" ]; then
+          echo "❌ Up-to-date requirement before merging is NOT enforced."
+          exit 1
+        fi
+
+        if [ "$(echo "$response" | jq -r '.enforce_admins.enabled')" != "true" ]; then
+          echo "❌ Admins can bypass protections."
+          exit 1
+        fi
+
+        echo "✅ All branch protection rules are correctly configured."

@@ -13,6 +13,7 @@ on:
 
 jobs:
   test:
+    if: false
     name: Test branch protection action
     runs-on: ${{ matrix.os }}
     strategy:

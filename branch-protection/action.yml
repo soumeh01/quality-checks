@@ -16,43 +16,48 @@ inputs:
 runs:
   using: 'composite'
   steps:
-    - name: Set up GH CLI authentication
-      shell: bash
-      run: |
-        echo "${{ inputs.token }}" | gh auth login --with-token
-
     - name: Check Branch Protection
       shell: bash
       env:
         REPO: ${{ inputs.repository }}
         BRANCH: ${{ inputs.branch }}
+        GH_TOKEN: ${{ inputs.token }}
       run: |
-        echo "🔍 Checking branch protection settings for '$BRANCH' in '$REPO'..."
+        echo "Checking branch protection settings for '$BRANCH' in '$REPO'..."
 
-        # Fetch protection rules using gh api
-        response=$(gh api \
+        # Fetch protection rules
+        response=$(curl -s -H "Authorization: Bearer $GH_TOKEN" \
           -H "Accept: application/vnd.github+json" \
-          /repos/$REPO/branches/$BRANCH/protection)
+          https://api.github.com/repos/$REPO/branches/$BRANCH/protection)
 
         echo "$response" | jq .
 
-        # Validate protection rules
-        if [ "$(echo "$response" | jq -r '.required_pull_request_reviews')" = "null" ]; then
+        # Validate protection
+        if echo "$response" | jq -e .message >/dev/null; then
+          echo "❌ Branch protection is NOT enabled."
+          exit 1
+        fi
+
+        # Require pull request approvals
+        if [ "$(echo "$response" | jq '.required_pull_request_reviews')" = "null" ]; then
           echo "❌ Pull request approvals NOT required."
           exit 1
         fi
 
-        if [ "$(echo "$response" | jq -r '.required_status_checks')" = "null" ]; then
+        # Require status checks
+        if [ "$(echo "$response" | jq '.required_status_checks')" = "null" ]; then
           echo "❌ Status checks NOT required."
           exit 1
         fi
 
-        if [ "$(echo "$response" | jq -r '.required_status_checks.strict')" != "true" ]; then
+        # Require up-to-date branches
+        if [ "$(echo "$response" | jq '.required_status_checks.strict')" != "true" ]; then
           echo "❌ Up-to-date requirement before merging is NOT enforced."
           exit 1
         fi
 
-        if [ "$(echo "$response" | jq -r '.enforce_admins.enabled')" != "true" ]; then
+        # No bypassing protection
+        if [ "$(echo "$response" | jq '.enforce_admins.enabled')" != "true" ]; then
           echo "❌ Admins can bypass protections."
           exit 1
         fi

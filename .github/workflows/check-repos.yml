@@ -28,3 +28,9 @@ jobs:
         working-directory: scripts
         run: |
           python check_repos.py
+
+      - name: Append result markdown to GitHub summary
+        working-directory: scripts
+        run: |
+          echo "📋 Writing results to GitHub Actions Summary"
+          cat results.md >> $GITHUB_STEP_SUMMARY

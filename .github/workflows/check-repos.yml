@@ -21,6 +21,11 @@ jobs:
         with:
           python-version: '3.x'
 
+      - name: Install pip dependencies
+        run: |
+            pip install --upgrade pip
+            pip install -r scripts/requirements.txt
+
       - name: Install Git (just in case)
         run: sudo apt-get update && sudo apt-get install -y git
 
@@ -33,4 +38,4 @@ jobs:
         working-directory: scripts
         run: |
           echo "📋 Writing results to GitHub Actions Summary"
-          cat results.md >> $GITHUB_STEP_SUMMARY
+          cat report.md >> $GITHUB_STEP_SUMMARY

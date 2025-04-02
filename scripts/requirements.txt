@@ -1,0 +1,3 @@
+# Requirements needed for the script to run
+requests
+pyyaml

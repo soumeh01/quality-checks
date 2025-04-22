@@ -7,11 +7,12 @@ import shutil
 
 GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
 HEADERS = {"Authorization": f"token {GITHUB_TOKEN}"} if GITHUB_TOKEN else {}
+PAT_GITHUB_TOKEN = os.getenv("PAT_GITHUB_TOKEN")
 
 def load_config(path="config.yaml"):
     try:
         with open(path, "r") as f:
-            print(f"📥 Loading config from `{path}`")
+            print(f"📅 Loading config from `{path}`")
             return yaml.safe_load(f)
     except Exception as e:
         print(f"❌ Failed to load config file: {e}")
@@ -23,7 +24,7 @@ def clone_repo_and_check_files(repo, files):
     file_status = {}
 
     try:
-        print(f"🌀 Cloning {repo}...")
+        print(f"🔀 Cloning {repo}...")
         subprocess.run(
             ["git", "clone", "--depth", "1", repo_url, temp_dir],
             check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
@@ -88,6 +89,40 @@ def check_workflows(repo, workflows):
 
     return results
 
+def check_branch_protection(repo, branch="main", token=None):
+    url = f"https://api.github.com/repos/{repo}/branches/{branch}/protection"
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Accept": "application/vnd.github+json"
+    }
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+
+    try:
+        resp = requests.get(url, headers=headers)
+        print(f"    🔒 URL: {url}")
+        print(f"    🔒 TOKEN: {token}")
+        if resp.status_code == 200:
+            data = resp.json()
+            print(f"required_status_checks: {data.get("required_status_checks", {}).get("strict", False)}")
+            print(f"required_pull_request_reviews: {data.get("required_pull_request_reviews", {}).get("required_approving_review_count", 0) > 0}")
+            print(f"enforce_admins: {data.get("enforce_admins", {}).get("enabled", False)}")
+            print(f"required_status_checks: {data.get("required_status_checks", {}).get("strict", False)}")
+
+            print(f"required_linear_history: {data.get("required_linear_history", {}).get("enabled", False)}")
+            print(f"required_linear_history: {data.get("required_linear_history", {}).get("enabled", False)}")
+            print(f"required_conversation_resolution: {data.get("required_conversation_resolution", {}).get("enabled", False)}")
+
+            return "✅ protected"
+        elif resp.status_code == 404:
+            return "❌ not protected"
+        elif resp.status_code == 403:
+            return "🚫 forbidden – check token permissions or repo access"
+        else:
+            return f"⚠️ error ({resp.status_code}): {resp.text}"
+    except requests.RequestException as e:
+        return f"❌ request error: {e}"
+
 def generate_markdown_report(config):
     report = []
 
@@ -102,7 +137,7 @@ def generate_markdown_report(config):
 
         emoji = "📦"
         report.append(f"# {emoji} {repo_type.capitalize()} Repo Compliance Report\n")
-        headers = ["Repository"] + required_files + required_workflows
+        headers = ["Repository"] + required_files + required_workflows + ["Branch Protection"]
         report.append("| " + " | ".join(headers) + " |")
         report.append("| " + " | ".join(["---"] * len(headers)) + " |")
 
@@ -121,6 +156,12 @@ def generate_markdown_report(config):
                 status = workflow_results.get(".github/workflows/"+ wf, "❌ unknown")
                 print(f"    ⚙️  {wf}: {status}")
                 row.append(status)
+
+            if not PAT_GITHUB_TOKEN:
+                print("❌ PAT_GITHUB_TOKEN is not set!")
+            protection_status = check_branch_protection(repo, "main", PAT_GITHUB_TOKEN)
+            print(f"    🔒 Branch protection: {protection_status}")
+            row.append(protection_status)
 
             report.append("| " + " | ".join(row) + " |")
 

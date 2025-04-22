@@ -31,7 +31,10 @@ jobs:
 
       - name: Run check_golang_repos.py
         working-directory: scripts
+        env:
+          PAT_GITHUB_TOKEN: ${{ secrets.PAT_GITHUB_TOKEN }}
         run: |
+          echo "Token is ${PAT_GITHUB_TOKEN:+set}"
           python check_repos.py
 
       - name: Append result markdown to GitHub summary

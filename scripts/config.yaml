@@ -6,6 +6,9 @@ repo_types:
       - Open-CMSIS-Pack/cbuild2cmake
       - Open-CMSIS-Pack/vidx2pidx
       - Open-CMSIS-Pack/generator-bridge
+      - soumeh01/cbuild
+      - soumeh01/CPP11
+      - soumeh01/cpackget
     checks:
       required_files:
         - README.md

@@ -32,7 +32,7 @@ runs:
 
     - name: Show file structure
       shell: bash
-      run: ls -R
+      run: ls -R ..
 
     - name: Run test-suggestion script
       shell: bash

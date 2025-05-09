@@ -30,6 +30,10 @@ runs:
       run: |
         pip install openai PyGithub
 
+    - name: Show file structure
+      shell: bash
+      run: ls -R
+
     - name: Run test-suggestion script
       shell: bash
       env:

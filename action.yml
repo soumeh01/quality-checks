@@ -43,4 +43,4 @@ runs:
         GITHUB_REPOSITORY: ${{ github.repository }}
         GITHUB_REF: ${{ github.ref }}
       run: |
-        python scripts/suggest_test.py
+        python "${{ github.action_path }}/scripts/suggest_test.py"

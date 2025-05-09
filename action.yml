@@ -3,17 +3,17 @@ description: A composite Action that runs a Python script to suggest table-drive
 
 inputs:
   openai_api_key:
-    description: OpenAI API key
+    description: 'OpenAI API key'
     required: true
   github_token:
-    description: GitHub token with repo access
+    description: 'GitHub token with repo access'
     required: true
   openai_base_url:
-    description: Optional: override the default OpenAI API endpoint (e.g., for a proxy)
+    description: 'Optional: override the default OpenAI API endpoint (e.g., for a proxy)'
     required: false
 
 runs:
-  using: composite
+  using: 'composite'
   steps:
     - name: Checkout repository
       uses: actions/checkout@v3
@@ -27,7 +27,8 @@ runs:
 
     - name: Install dependencies
       shell: bash
-      run: pip install openai PyGithub
+      run: |
+        pip install openai PyGithub
 
     - name: Run test-suggestion script
       shell: bash
@@ -37,4 +38,5 @@ runs:
         GITHUB_TOKEN: ${{ inputs.github_token }}
         GITHUB_REPOSITORY: ${{ github.repository }}
         GITHUB_REF: ${{ github.ref }}
-      run: python scripts/suggest_tests.py
+      run: |
+        python scripts/suggest_tests.py

@@ -16,4 +16,5 @@ jobs:
         uses: ./
         with:
           openai_api_key: ${{ secrets.OPENAI_API_KEY }}
-          github_token:    ${{ secrets.GITHUB_TOKEN }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          openai_base_url: https://openai-api-proxy.geo.arm.com/api/providers/openai-eu/v1

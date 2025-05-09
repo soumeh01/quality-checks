@@ -16,9 +16,7 @@ def run_cmd(cmd):
         sys.exit(1)
 
 def get_pr_number():
-    """
-    Extract PR number from GITHUB_REF, which is like 'refs/pull/42/merge'
-    """
+    """Extract PR number from GITHUB_REF, like 'refs/pull/42/merge'."""
     ref = os.getenv("GITHUB_REF", "")
     parts = ref.split("/")
     if len(parts) >= 3 and parts[1] == "pull":
@@ -27,22 +25,15 @@ def get_pr_number():
     sys.exit(1)
 
 def get_changed_go_functions():
-    # Ensure we have the base branch to diff against
+    """Return changed Go function bodies using git diff."""
     run_cmd(["git", "fetch", "origin", "main", "--depth=1"])
     diff = run_cmd(["git", "diff", "origin/main...HEAD"])
 
-    # Regex to capture full Go function bodies
     pattern = re.compile(
         r"func\s+\(?.*?\)?\s+\w+\([^)]*\)\s*\{[\s\S]+?\}",
         flags=re.MULTILINE | re.DOTALL
     )
-
-    functions = []
-    for match in pattern.finditer(diff):
-        # Determine which file this chunk belongs to
-        # (for simplicity, we'll comment them all under one header)
-        functions.append(match.group(0).strip())
-    return functions
+    return [match.group(0).strip() for match in pattern.finditer(diff)]
 
 def make_prompt(fn_code):
     return (
@@ -56,6 +47,10 @@ def make_prompt(fn_code):
 
 def suggest_tests(functions):
     openai.api_key = os.getenv("OPENAI_API_KEY")
+    base_url = os.getenv("OPENAI_BASE_URL")
+    if base_url:
+        openai.base_url = base_url
+
     suggestions = []
     for fn in functions:
         resp = openai.ChatCompletion.create(

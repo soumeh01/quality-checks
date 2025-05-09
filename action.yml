@@ -1,0 +1,35 @@
+name: "Suggest Go Test Cases"
+description: "A composite Action that runs a Python script to suggest table-driven Go tests for changed functions via OpenAI"
+inputs:
+  openai_api_key:
+    description: "OpenAI API key"
+    required: true
+  github_token:
+    description: "GitHub token with repo access"
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Install dependencies
+      shell: bash
+      run: pip install openai PyGithub
+
+    - name: Run test-suggestion script
+      shell: bash
+      env:
+        OPENAI_API_KEY: ${{ inputs.openai_api_key }}
+        GITHUB_TOKEN:    ${{ inputs.github_token }}
+        GITHUB_REPOSITORY: ${{ github.repository }}
+        GITHUB_REF:       ${{ github.ref }}
+      run: python ./scripts/suggest_tests.py

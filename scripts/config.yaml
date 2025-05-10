@@ -1,0 +1,32 @@
+repo_types:
+  go:
+    repos:
+      - Open-CMSIS-Pack/cbuild
+      - Open-CMSIS-Pack/cpackget
+      - Open-CMSIS-Pack/cbuild2cmake
+      - Open-CMSIS-Pack/vidx2pidx
+      - Open-CMSIS-Pack/generator-bridge
+      - soumeh01/cbuild
+      - soumeh01/CPP11
+      - soumeh01/cpackget
+    checks:
+      required_files:
+        - README.md
+        - SECURITY.md
+        - LICENSE
+      workflows:
+        - markdown.yml
+        - build.yml
+        - codeql.yml
+        - tpip-check.yml
+        - scorecard.yml
+        - test.yml
+  cmsis-examples:
+    repos:
+      - Open-CMSIS-Pack/csolution-examples
+    checks:
+      required_files:
+        - README.md
+        - LICENSE
+      workflows:
+        - markdown.yml

@@ -1,0 +1,44 @@
+name: Check Repos for Required Files
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [ main ]
+    paths:
+      - scripts/*
+      - .github/workflows/check-repos.yml
+
+jobs:
+  check-go-repos:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout workflow repo
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+
+      - name: Install pip dependencies
+        run: |
+            pip install --upgrade pip
+            pip install -r scripts/requirements.txt
+
+      - name: Install Git (just in case)
+        run: sudo apt-get update && sudo apt-get install -y git
+
+      - name: Run check_golang_repos.py
+        working-directory: scripts
+        env:
+          PAT_GITHUB_TOKEN: ${{ secrets.PAT_GITHUB_TOKEN }}
+        run: |
+          echo "Token is ${PAT_GITHUB_TOKEN:+set}"
+          python check_repos.py
+
+      - name: Append result markdown to GitHub summary
+        working-directory: scripts
+        run: |
+          echo "📋 Writing results to GitHub Actions Summary"
+          cat report.md >> $GITHUB_STEP_SUMMARY

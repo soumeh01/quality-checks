@@ -1,0 +1,65 @@
+name: 'Contribution Rules'
+description: 'Check Repository Contribution Rules'
+author: 'Sourabh Mehta <sourabh.mehta@arm.com>'
+
+inputs:
+  repository:
+    description: 'Full repository name (e.g., org/repo)'
+    required: true
+  branch:
+    description: 'Branch to check (e.g., main)'
+    required: true
+  token:
+    description: 'GitHub token'
+    required: true
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Check Branch Protection
+      shell: bash
+      env:
+        REPO: ${{ inputs.repository }}
+        BRANCH: ${{ inputs.branch }}
+        GH_TOKEN: ${{ inputs.token }}
+      run: |
+        echo "Checking branch protection settings for '$BRANCH' in '$REPO'..."
+
+        # Fetch protection rules
+        response=$(curl -s -H "Authorization: Bearer $GH_TOKEN" \
+          -H "Accept: application/vnd.github+json" \
+          https://api.github.com/repos/$REPO/branches/$BRANCH/protection)
+
+        echo "$response" | jq .
+
+        # Validate protection
+        if echo "$response" | jq -e .message >/dev/null; then
+          echo "❌ Branch protection is NOT enabled."
+          exit 1
+        fi
+
+        # Require pull request approvals
+        if [ "$(echo "$response" | jq '.required_pull_request_reviews')" = "null" ]; then
+          echo "❌ Pull request approvals NOT required."
+          exit 1
+        fi
+
+        # Require status checks
+        if [ "$(echo "$response" | jq '.required_status_checks')" = "null" ]; then
+          echo "❌ Status checks NOT required."
+          exit 1
+        fi
+
+        # Require up-to-date branches
+        if [ "$(echo "$response" | jq '.required_status_checks.strict')" != "true" ]; then
+          echo "❌ Up-to-date requirement before merging is NOT enforced."
+          exit 1
+        fi
+
+        # No bypassing protection
+        if [ "$(echo "$response" | jq '.enforce_admins.enabled')" != "true" ]; then
+          echo "❌ Admins can bypass protections."
+          exit 1
+        fi
+
+        echo "✅ All branch protection rules are correctly configured."

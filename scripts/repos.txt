@@ -1,0 +1,5 @@
+Open-CMSIS-Pack/cbuild
+Open-CMSIS-Pack/cpackget
+Open-CMSIS-Pack/cbuild2cmake
+Open-CMSIS-Pack/vidx2pidx
+Open-CMSIS-Pack/generator-bridge
